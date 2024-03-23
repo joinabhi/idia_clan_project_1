@@ -13,38 +13,52 @@ async function request(url, query, variables) {
 // login function
 function login(event){
    event.preventDefault();
-   const email = event.target.email.value;
-   const password = event.target.password.value;
+   const email = document.getElementById('email').value; // Assuming this is the id of your email input field
+   const password = document.getElementById('password').value; 
 
    const userLogin = {
        email,
        password
    };
 
-   const mutation = `
-       mutation Login($email: String!, $password: String!) {
-           login(email: $email, password: $password) {
-               id
-               name
-               token
-           }
+//    const mutation = `
+//    mutation Login($email: String!, $password: String!) {
+//            login(email: $email, password: $password) {
+//                id
+//                email
+//                token
+//            }
+//        }
+//    `;
+
+const mutation = `
+   mutation login($email: String!, $password: String!) {
+       login(email: $email, password: $password) {
+           id
+           email
+           token
        }
-   `;
+   }
+`;
+
+console.log("mutation", mutation)
+
+
 
    const variables = {
        email: userLogin.email,
        password: userLogin.password
    };
 
+   console.log("variables", variables)
+
    request('http://localhost:7000/graphql', mutation, variables)
        .then(data => {
            console.log('Login successful:', data);
            // Handle success, maybe redirect to a dashboard page
-           const { login } = data;
-           if (login.token) {
-               localStorage.setItem('token', login.token);
+           localStorage.setItem('token', data.data.login.token)
                window.location.href = "../socialMediaApp/socialMediaApp.html";
-           }
+           
        })
        .catch(error => {
            console.error('Error logging in:', error);

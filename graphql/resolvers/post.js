@@ -8,6 +8,7 @@ module.exports={
         async getPosts(){
             try{
                 const posts=await Post.find().sort({createdAt:-1})
+                console.log("11", posts)
                 return posts
             }catch{
                 throw new Error(err)
@@ -47,8 +48,10 @@ module.exports={
         const user=checkAuth(context);
          try{
           const post=await Post.findById(postId);
+          console.log("51", post)
+          console.log("52", user)
           if(user.username===post.username){
-             await post.delete()
+            await Post.deleteOne({ _id: postId });
              return "post deleted successfully"
           }else{
             throw new AuthenticationError("Action not allowed")

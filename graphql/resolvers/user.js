@@ -18,17 +18,19 @@ function generateToken(user) {
       { expiresIn: '1h' }
     );
   }
+ 
 
 module.exports={
     Mutation:{
-        async login(_, { username, password }) {
-            const { errors, valid } = validateLoginInput(username, password);
+        async login(_, { email, password }) {
+            const { errors, valid } = validateLoginInput(email, password);
       
             if (!valid) {
               throw new UserInputError('Errors', { errors });
             }
       
-            const user = await User.findOne({ username });
+            const user = await User.findOne({email});
+            console.log("user in login", user)
       
             if (!user) {
               errors.general = 'User not found';
@@ -42,6 +44,7 @@ module.exports={
             }
       
             const token = generateToken(user);
+            console.log("QWERTYUIOP", token)
       
             return {
               ...user._doc,
@@ -49,42 +52,55 @@ module.exports={
               token
             };
           },
-       async register(_,
-            {
-                registerInput:{username, email, password}
-            }, 
-       
-            ){
-            //TODO:validate user data
-            const {valid, errors}=validateRegisterInput(username, email, password)
-            if (!valid) {
-                throw new UserInputError('Errors', { errors });
-              }
-            //TODO:make sure user doesn't already exist
-            const user=await User.findOne({username})
-              if(user){
-                throw new UserInputError("username is taken",{
-                    errors:{
-                        username:"This username is taken"
-                    }
-                })
-              }
-            //TODO:has password and create an auth token
-            password=await bcrypt.hash(password, 10)
 
-            const newUser=new User({
-                email,
-                username,
-                password,
-                createdAt:new Date().toISOString()
-            })
-            const res=await newUser.save()
-            const token=generateToken(res)
-            return {
-                ...res._doc,
-                id:res._id,
-                token
-            }
-        }
-    }
+
+
+
+
+async register(_, { registerInput: { username, email, password } }) {
+  // TODO: Validate user data
+  const { valid, errors } = validateRegisterInput(username, email, password);
+  if (!valid) {
+      throw new UserInputError('Errors', { errors });
+  }
+
+  // Check if user already exists
+  const existingUser = await User.findOne({email});
+  if (existingUser) {
+      throw new UserInputError('Email is taken', {
+          errors: {
+              email: 'This email is already registered'
+          }
+      });
+  }
+
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create a new user
+  const newUser = new User({
+      email:email,
+      username:username,
+      password: hashedPassword, // Use 'password' field here
+      createdAt: new Date().toISOString()
+  });
+
+  // Save the new user
+  const savedUser = await newUser.save();
+
+  console.log("129-------->", savedUser)
+  // Generate token
+  const token = generateToken(savedUser);
+  console.log("token&&&&", token)
+
+  console.log( savedUser._id, savedUser.email, savedUser.username, savedUser.createdAt, token)
+ return {
+    id: savedUser._id,
+    email: savedUser.email,
+    username: savedUser.username,
+    createdAt: savedUser.createdAt,
+    token: token
+};
 }
+    }
+  }
