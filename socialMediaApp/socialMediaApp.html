@@ -60,24 +60,26 @@ async function request(url, query, variables, headers) {
     mutation CreatePost($post: String!) {
         createPost(body: $post) {
             id
+            username
             body
         }
     }
 `;
 
-
-
-
 const variables = {
+
     post:post
    };
 
    console.log("7777771111111111", variables)
             try {
-                const token = localStorage.getItem('token')
+                const token = localStorage.getItem('token');
+                const decodeToken = parseJwt(token);
+                console.log("145****", decodeToken)
                 const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
 
                 console.log('Post added successfully:', data);
+                // showUserOnScreenOnCreating(decodeToken.username);
                 showUserOnScreen(data.data.createPost);
                
                 document.forms[0].reset();
@@ -174,6 +176,10 @@ function parseJwt(token) {
             childElem.appendChild(deleteButton);
             parentElem.appendChild(childElem);
         }
+
+        // function showUserOnScreenOnCreating(){
+
+        // }
 
 
         // function showUserOnScreen(user) {
