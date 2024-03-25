@@ -31,6 +31,8 @@
  
     <h1>Recent Posts</h1>
     <ul id="todoCompleted"></ul>
+    <!-- <h1>All Users</h1>
+    <ul id="allUsers"></ul> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/graphql-request/3.5.0/graphql-request.min.js"></script>
     <script>
 
@@ -77,6 +79,7 @@ const variables = {
 
                 console.log('Post added successfully:', data);
                 showUserOnScreen(data.data.createPost);
+               
                 document.forms[0].reset();
             } catch (error) {
                 console.error('Error adding post:', error);
@@ -89,16 +92,27 @@ const variables = {
                 {
                     getPosts {
                         id
+                        username
                         body
                     }
                 }
             `;
+            // const query2 = `
+            //     {
+            //          {
+            //             id
+            //             username
+            //             body
+            //         }
+            //     }
+            // `;
 
             try {
                 const token = localStorage.getItem('token')
                 const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
                 console.log('Fetched all posts:', data);
                 data.data.getPosts.forEach(post => showUserOnScreen(post));
+                // data.data.allUsers.forEach(users=>showUserOnScreen(users));
             } catch (error) {
                 console.error('Error fetching posts:', error);
             }
@@ -116,10 +130,10 @@ const variables = {
 
     try {
         const token = localStorage.getItem('token')
-        await request('http://localhost:7000/graphql', mutation, { postId:postId }, { Authorization: `Bearer ${token}` }); // Use postId here
-        
+        const data = await request('http://localhost:7000/graphql', mutation, { postId:postId }, { Authorization: `Bearer ${token}` })
+       console.log("get data ka response", data)
         const postElem = document.getElementById(`post-${postId}`);
-        console.log(postId, postElem)
+        console.log("postId--->",postId, "postElem--->",postElem)
         postElem.parentNode.removeChild(postElem);
     } catch (error) {
         console.error('Error deleting post:', error);
@@ -137,7 +151,9 @@ function parseJwt(token) {
     return JSON.parse(jsonPayload);
   }
 
-
+//    function followAndUnfollowConcept(){
+    
+//    }
 
         function showUserOnScreen(post) {
             const token = localStorage.getItem('token');
@@ -145,7 +161,8 @@ function parseJwt(token) {
             console.log("145****", decodeToken)
             const parentElem = document.getElementById('todoCompleted');
             const childElem = document.createElement('li');
-            childElem.textContent =decodeToken.username+"---->"+post.body;
+            console.log("posts h get ka", post)
+            childElem.textContent =post.username+"---->"+post.body;
             childElem.id = `post-${post.id}`;
 
             const deleteButton = document.createElement('button');
@@ -158,7 +175,28 @@ function parseJwt(token) {
             parentElem.appendChild(childElem);
         }
 
-        window.addEventListener('DOMContentLoaded', fetchAllPosts);
+
+        // function showUserOnScreen(user) {
+        //     const token = localStorage.getItem('token');
+        //     const decodeToken = parseJwt(token);
+        //     console.log("145****", decodeToken)
+        //     const parentElem = document.getElementById('allUsers');
+        //     const childElem = document.createElement('li');
+        //     console.log("posts h get ka", post)
+        //     childElem.textContent =user.username
+        //     childElem.id = `username-${username.id}`;
+
+        //     const followButton = document.createElement('button');
+        //     followButton.textContent = 'follow User';
+        //     followButton.style.backgroundColor = 'green';
+        //     followButton.style.color = 'white';
+        //     // followButton.onclick = () => followAndUnfollowConcept();
+
+        //     childElem.appendChild(followButton);
+        //     parentElem.appendChild(childElem);
+        // }
+
+        // window.addEventListener('DOMContentLoaded', fetchAllPosts);
     </script>
 </body>
 </html>
