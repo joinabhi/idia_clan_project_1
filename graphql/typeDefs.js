@@ -6,6 +6,7 @@ id: ID!
 body:String!
 createdAt:String!
 username:String!
+user:ID!
 }
 
 type User {
@@ -15,6 +16,7 @@ type User {
     password:String!
     username: String!
     createdAt: String!
+    following:[User]
   }
 
 input RegisterInput {
@@ -23,11 +25,13 @@ input RegisterInput {
     email: String!
   }
 
-  
+
 
 type Query{
+    getUsers:[User]
     getPosts:[Post]
     getPost(postId: ID!): Post
+    getFollowedPosts:[Post]
 }
 
 type Mutation{
@@ -35,47 +39,10 @@ type Mutation{
     login(email: String!, password: String!): User!
     createPost(body: String!): Post!
     deletePost(postId: ID!): String!
+    followUser(followingId:ID!, followerId:ID!):User!
+    unfollowUser(followingId:ID!, followerId:ID!):User!
 }
 `;
 
 
-// const { gql } = require("apollo-server");
 
-// module.exports = gql`
-//   type Post {
-//     id: ID!
-//     body: String!
-//     createdAt: String!
-//     username: String!
-//   }
-
-//   type User {
-//     id: ID!
-//     email: String!
-//     username: String!
-//     createdAt: String!
-//   }
-
-//   input RegisterInput {
-//     username: String!
-//     password: String!
-//     email: String!
-//   }
-
-//   type AuthPayload {
-//     token: String!
-//     user: User! # Optionally, you can include user information along with the token
-//   }
-
-//   type Query {
-//     getPosts: [Post]
-//     getPost(postId: ID!): Post
-//   }
-
-//   type Mutation {
-//     register(registerInput: RegisterInput): AuthPayload! # Use AuthPayload as return type
-//     login(email: String!, password: String!): AuthPayload! # Use AuthPayload as return type
-//     createPost(body: String!): Post!
-//     deletePost(postId: ID!): String!
-//   }
-// `;

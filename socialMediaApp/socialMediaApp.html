@@ -28,28 +28,27 @@
             <button style="background-color:blue; border-color:red; color:white">Submit</button>
         </fieldset>
     </form>
- 
+
     <h1>Recent Posts</h1>
     <ul id="todoCompleted"></ul>
-    <!-- <h1>All Users</h1>
-    <ul id="allUsers"></ul> -->
+    <h1>All Users</h1>
+    <ul id="allUsers"></ul>
+    <div id="counter">Following: 0</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/graphql-request/3.5.0/graphql-request.min.js"></script>
     <script>
 
 
-async function request(url, query, variables, headers) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...headers // Spread the headers object here
-        },
-        body: JSON.stringify({ query, variables }),
-    });
-    return await response.json();
-}
-
-
+        async function request(url, query, variables, headers) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...headers // Spread the headers object here
+                },
+                body: JSON.stringify({ query, variables }),
+            });
+            return await response.json();
+        }
 
 
         async function formSubmit(event) {
@@ -57,7 +56,7 @@ async function request(url, query, variables, headers) {
             const post = event.target.name.value;
 
             const mutation = `
-    mutation CreatePost($post: String!) {
+        mutation CreatePost($post: String!) {
         createPost(body: $post) {
             id
             username
@@ -66,12 +65,11 @@ async function request(url, query, variables, headers) {
     }
 `;
 
-const variables = {
+            const variables = {
+                post: post
+            };
 
-    post:post
-   };
-
-   console.log("7777771111111111", variables)
+            console.log("7777771111111111", variables)
             try {
                 const token = localStorage.getItem('token');
                 const decodeToken = parseJwt(token);
@@ -81,81 +79,268 @@ const variables = {
                 console.log('Post added successfully:', data);
                 // showUserOnScreenOnCreating(decodeToken.username);
                 showUserOnScreen(data.data.createPost);
-               
+
                 document.forms[0].reset();
             } catch (error) {
                 console.error('Error adding post:', error);
             }
         }
 
-   
-        async function fetchAllPosts() {
-            const query = `
-                {
-                    getPosts {
-                        id
-                        username
-                        body
-                    }
-                }
-            `;
-            // const query2 = `
-            //     {
-            //          {
-            //             id
-            //             username
-            //             body
-            //         }
-            //     }
-            // `;
 
+        // async function fetchAllPosts() {
+        //     const query = `
+        //         {
+        //             getPosts {
+        //                 id
+        //                 username
+        //                 body
+        //             }
+        //         }
+        //     `;
+        //     try {
+        //         const token = localStorage.getItem('token')
+        //         const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
+        //         console.log('Fetched all posts:', data);
+        //         data.data.getPosts.forEach(post => showUserOnScreen(post));
+        //     } catch (error) {
+        //         console.error('Error fetching posts:', error);
+        //     }
+        // }
+        // window.addEventListener('DOMContentLoaded', fetchAllPosts);
+
+        async function fetchAllUsers() {
+            const query = `{
+            getUsers{
+                id
+                username
+                email
+             }
+           }
+        `;
+            console.log("query of allUsers", query)
             try {
                 const token = localStorage.getItem('token')
-                const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
-                console.log('Fetched all posts:', data);
-                data.data.getPosts.forEach(post => showUserOnScreen(post));
-                // data.data.allUsers.forEach(users=>showUserOnScreen(users));
+                const decodeToken = parseJwt(token);
+                console.log("128****----------->", decodeToken)
+                const data = await request("http://localhost:7000/graphql", query)
+                const users = data.data.getUsers.filter(user => user.id !== decodeToken.id);
+                console.log("users h", users)
+                users.forEach(user => showUserOnScreenforFandUF(user));
             } catch (error) {
-                console.error('Error fetching posts:', error);
+                console.error("Error fetching Users", error)
+
             }
         }
-        window.addEventListener('DOMContentLoaded', fetchAllPosts);
+
+        window.addEventListener("DOMContentLoaded", fetchAllUsers)
 
         async function deletePost(postId) {
-    const mutation = `
+            const mutation = `
         mutation DeletePost($postId: ID!) {
             deletePost(postId: $postId)
         }
     `;
 
-    console.log("data for delete", mutation)
+            console.log("data for delete", mutation)
 
+            try {
+                const token = localStorage.getItem('token')
+                const data = await request('http://localhost:7000/graphql', mutation, { postId: postId }, { Authorization: `Bearer ${token}` })
+                console.log("get data ka response", data)
+                const postElem = document.getElementById(`post-${postId}`);
+                console.log("postId--->", postId, "postElem--->", postElem)
+                postElem.parentNode.removeChild(postElem);
+            } catch (error) {
+                console.error('Error deleting post:', error);
+            }
+        }
+
+        function parseJwt(token) {
+            console.log('141', token)
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        }
+
+        let counter = 0; // Initialize the counter
+        function followAndUnfollowUserforCount(action) {
+            if (action === 'follow') {
+                counter++;
+            } else if (action === 'unfollow') {
+                if (counter > 0) {
+                    counter--;
+                }
+            }
+            document.getElementById('counter').innerText = "Following: " + counter;
+        }
+
+
+        //     async function followAndUnfollowUser(userId, action) {
+        //         try {
+        //             const query = `
+        //     getPosts {
+        //             ${action}(userId: "${userId}") {
+        //                 id
+        //                 username
+        //                 // Add other user fields if needed
+        //             }
+        //         }
+        // `;
+        //             console.log("199______-->", query)
+
+        //             const token = localStorage.getItem('token');
+        //             const data = await request('http://localhost:7000/graphql', query, { userId: userId }, { Authorization: `Bearer ${token}` });
+        //             console.log(`${action} user result:`, data);
+        //             // Update UI based on action
+        //             if (action === 'follow') {
+        //                 // Disable follow button and enable unfollow button
+        //                 document.getElementById(`followBtn-${userId}`).disabled = true;
+        //                 document.getElementById(`unfollowBtn-${userId}`).disabled = false;
+        //             } else {
+        //                 // Disable unfollow button and enable follow button
+        //                 document.getElementById(`unfollowBtn-${userId}`).disabled = true;
+        //                 document.getElementById(`followBtn-${userId}`).disabled = false;
+        //             }
+        //         } catch (error) {
+        //             console.error(`Error ${action}ing user:`, error);
+        //         }
+        //     }
+
+        async function followAndUnfollowUser1(followerId) {
     try {
-        const token = localStorage.getItem('token')
-        const data = await request('http://localhost:7000/graphql', mutation, { postId:postId }, { Authorization: `Bearer ${token}` })
-       console.log("get data ka response", data)
-        const postElem = document.getElementById(`post-${postId}`);
-        console.log("postId--->",postId, "postElem--->",postElem)
-        postElem.parentNode.removeChild(postElem);
+        console.log('followerId:', followerId);
+        const token = localStorage.getItem('token');
+        const decodedToken = parseJwt(token);
+        console.log('decodeToken in follower', decodedToken)
+        const followingId = decodedToken.id; // Assuming userId is stored in token
+        console.log('followingId:', followingId);
+        const mutation = `
+            mutation FollowUser($followingId: ID!, $followerId: ID!) {
+                followUser(followingId: $followingId, followerId: $followerId) {
+                    id
+                    email
+                    username
+                    createdAt
+                }
+            }
+        `;
+
+
+console.log("232((((((((((()))))))))))", mutation)
+
+const variables = {
+            followingId: String(followingId),
+            followerId: String(followerId)
+        };
+   console.log("235################------>", variables)
+   const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
+        console.log('data from followAndUnfollowUser', data);
     } catch (error) {
-        console.error('Error deleting post:', error);
+        console.error(error);
     }
 }
 
-function parseJwt(token) {
-    console.log('141', token)
-    var base64Url = token.split('.')[1];
-    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-  
-    return JSON.parse(jsonPayload);
-  }
+async function followAndUnfollowUser2(followerId) {
+    try {
+        console.log('followerId:', followerId);
+        const token = localStorage.getItem('token');
+        const decodedToken = parseJwt(token);
+        console.log('decodeToken in follower', decodedToken)
+        const followingId = decodedToken.id; // Assuming userId is stored in token
+        console.log('followingId:', followingId);
+        const mutation = `
+            mutation UnfollowUser($followingId: ID!, $followerId: ID!) {
+                unfollowUser(followingId: $followingId, followerId: $followerId) {
+                    id
+                    email
+                    username
+                    createdAt
+                }
+            }
+        `;
 
-//    function followAndUnfollowConcept(){
-    
-//    }
+
+console.log("232((((((((((()))))))))))", mutation)
+
+const variables = {
+            followingId: String(followingId),
+            followerId: String(followerId)
+        };
+   console.log("235################------>", variables)
+   const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
+        console.log('data from followAndUnfollowUser', data);
+        
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function fetchFollowedPosts(followerId) {
+                const query = `
+            query {
+                getPosts {
+                    id
+                    username
+                    body
+                    user
+                }
+            }
+        `;
+                try {
+                    const token = localStorage.getItem('token');
+                    const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
+                    console.log('Fetch followed posts:', data);
+                    console.log("311111111111111111",data )
+                    const posts = data.data.getPosts.filter(user => user.user === followerId);
+                   console.log("users h", posts)
+                   posts.forEach(post => showUserOnScreen(post));
+                  } catch (error) {
+                    console.error('Error fetching posts:', error);
+                }
+            }
+
+
+            async function fetchFollowedPosts2(followerId) {
+                const query = `
+            query {
+                getPosts {
+                    id
+                    username
+                    body
+                    user
+                }
+            }
+        `;
+                try {
+                    const token = localStorage.getItem('token');
+                    const data = await request('http://localhost:7000/graphql', query, { followerId: followerId }, { Authorization: `Bearer ${token}` });
+                    console.log('Fetch followed posts:', data);
+                   
+                const posts = data.data.getPosts.filter(user => user.user === followerId);
+                console.log("users h", posts)
+                posts.forEach(post=>{
+                    const postElem = document.getElementById(`post-${post.id}`);
+                if(postElem){
+                    postElem.parentNode.removeChild(postElem);
+                }
+                })
+               
+               
+               
+                //    posts.forEach(post => showUserOnScreen(post));
+                  } catch (error) {
+                    console.error('Error fetching posts:', error);
+                }
+            }
+
+
+
+        window.addEventListener('DOMContentLoaded', fetchFollowedPosts2);
+
 
         function showUserOnScreen(post) {
             const token = localStorage.getItem('token');
@@ -164,7 +349,7 @@ function parseJwt(token) {
             const parentElem = document.getElementById('todoCompleted');
             const childElem = document.createElement('li');
             console.log("posts h get ka", post)
-            childElem.textContent =post.username+"---->"+post.body;
+            childElem.textContent = post.username + "---->" + post.body;
             childElem.id = `post-${post.id}`;
 
             const deleteButton = document.createElement('button');
@@ -177,32 +362,56 @@ function parseJwt(token) {
             parentElem.appendChild(childElem);
         }
 
-        // function showUserOnScreenOnCreating(){
+        function showUserOnScreenforFandUF(user) {
+            console.log('300%%%%%%%%%%%%%%%%%%',user)
+            const token = localStorage.getItem('token');
+            const decodeToken = parseJwt(token);
+            console.log("145****", decodeToken)
+            const parentElem = document.getElementById('allUsers');
+            const childElem = document.createElement('li');
+            console.log("posts h get ka", user)
+            childElem.textContent = user.username
+            childElem.id = `user-${user.id}`;
 
-        // }
+            const followButton = document.createElement('button');
+            followButton.textContent = 'Follow User';
+            followButton.style.backgroundColor = 'yellow'
 
+            followButton.style.color = 'black';
+            followButton.onclick = () => {
+                followAndUnfollowUserforCount("follow")
+                console.log("312&&&&&&&&&&&--->", user)
+                const userId=user.id
+                followAndUnfollowUser1(userId)
+                fetchFollowedPosts(userId)
+                followButton.disabled = true;
+                followButton.style.backgroundColor = 'green';
+                unfollowButton.disabled = false;
 
-        // function showUserOnScreen(user) {
-        //     const token = localStorage.getItem('token');
-        //     const decodeToken = parseJwt(token);
-        //     console.log("145****", decodeToken)
-        //     const parentElem = document.getElementById('allUsers');
-        //     const childElem = document.createElement('li');
-        //     console.log("posts h get ka", post)
-        //     childElem.textContent =user.username
-        //     childElem.id = `username-${username.id}`;
+            }
 
-        //     const followButton = document.createElement('button');
-        //     followButton.textContent = 'follow User';
-        //     followButton.style.backgroundColor = 'green';
-        //     followButton.style.color = 'white';
-        //     // followButton.onclick = () => followAndUnfollowConcept();
+            const unfollowButton = document.createElement('button');
+            unfollowButton.textContent = 'Unfollow User';
+            unfollowButton.style.backgroundColor = 'red';
+            unfollowButton.style.color = 'black';
+            unfollowButton.onclick = () => {
+                followAndUnfollowUserforCount("unfollow")
+                followAndUnfollowUser2(user.id)
+                fetchFollowedPosts2(user.id)
+                unfollowButton.disabled = true;
+                followButton.disabled = false;
+                followButton.style.backgroundColor = 'yellow';
+            }
 
-        //     childElem.appendChild(followButton);
-        //     parentElem.appendChild(childElem);
-        // }
+            if (followButton.style.backgroundColor === 'yellow') {
+                unfollowButton.disabled = true;
+            }
+            childElem.appendChild(followButton);
+            childElem.appendChild(unfollowButton);
+            parentElem.appendChild(childElem);
 
-        // window.addEventListener('DOMContentLoaded', fetchAllPosts);
+        }
     </script>
 </body>
+
 </html>
