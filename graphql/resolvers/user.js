@@ -1,5 +1,5 @@
 const User = require('../../models/user')
-const Follow=require('../../models/follow')
+const Follow = require('../../models/follow')
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const checkAuth = require('../../util/check-auth');
@@ -25,11 +25,7 @@ function generateToken(user) {
 
 module.exports = {
   Mutation: {
-
-
-
-
-    async login(_, { email, password }) {
+  async login(_, { email, password }) {
       const { errors, valid } = validateLoginInput(email, password);
 
       if (!valid) {
@@ -60,11 +56,7 @@ module.exports = {
       };
     },
 
-
-
-
-
-    async register(_, { registerInput: { username, email, password } }) {
+async register(_, { registerInput: { username, email, password } }) {
       // TODO: Validate user data
       const { valid, errors } = validateRegisterInput(username, email, password);
       if (!valid) {
@@ -110,52 +102,43 @@ module.exports = {
       };
     },
 
-    async followUser(_, {followingId, followerId}){
-      console.log("followingId, followerId",followingId, followerId )
+    async followUser(_, { followingId, followerId }) {
+      console.log("followingId, followerId", followingId, followerId)
       try {
-          // Check if the user is already being followed
-          const existingFollow = await Follow.findOne({ follower: followerId, following: followingId });
-          console.log('117----->existingFollowerUser', existingFollow )
-          if (existingFollow) {
-              throw new Error('User is already being followed');
-          }
-  
-          const follow = new Follow({
-              follower: followerId,
-              following: followingId
-          });
-          console.log('126----,.,.,.follow', follow)
-          await follow.save();
-  
-return await User.findById(followerId);
+        // Check if the user is already being followed
+        const existingFollow = await Follow.findOne({ follower: followerId, following: followingId });
+        console.log('117----->existingFollowerUser', existingFollow)
+        if (existingFollow) {
+          throw new Error('User is already being followed');
+        }
+
+        const follow = new Follow({
+          follower: followerId,
+          following: followingId
+        });
+        console.log('126----,.,.,.follow', follow)
+        await follow.save();
+
+        return await User.findById(followerId);
       } catch (error) {
-          throw error;
+        throw error;
       }
-  },
-  
-  async unfollowUser(_,{followingId, followerId}){
+    },
+
+    async unfollowUser(_, { followingId, followerId }) {
       try {
-          // Check if the user is being followed
-          const existingFollow = await Follow.findOne({ follower: followerId, following: followingId });
-          if (!existingFollow) {
-              throw new Error('User is not being followed');
-          }
-  
-          await Follow.findByIdAndDelete(existingFollow._id);
-          return await User.findById(followerId);
+        // Check if the user is being followed
+        const existingFollow = await Follow.findOne({ follower: followerId, following: followingId });
+        if (!existingFollow) {
+          throw new Error('User is not being followed');
+        }
+
+        await Follow.findByIdAndDelete(existingFollow._id);
+        return await User.findById(followerId);
       } catch (error) {
-          throw error;
+        throw error;
       }
-  }
-
-
-
-
-
-
-
-
-
+    }
   },
 
   Query: {
@@ -169,8 +152,5 @@ return await User.findById(followerId);
         throw new Error("Failed to fetch users.");
       }
     }
-
-
-
   }
 }

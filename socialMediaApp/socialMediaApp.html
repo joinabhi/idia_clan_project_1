@@ -31,6 +31,8 @@
 
     <h1>Recent Posts</h1>
     <ul id="todoCompleted"></ul>
+    <h1>Follower Posts</h1>
+    <ul id="followerPost"></ul>
     <h1>All Users</h1>
     <ul id="allUsers"></ul>
     <div id="counter">Following: 0</div>
@@ -64,7 +66,6 @@
         }
     }
 `;
-
             const variables = {
                 post: post
             };
@@ -77,9 +78,7 @@
                 const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
 
                 console.log('Post added successfully:', data);
-                // showUserOnScreenOnCreating(decodeToken.username);
                 showUserOnScreen(data.data.createPost);
-
                 document.forms[0].reset();
             } catch (error) {
                 console.error('Error adding post:', error);
@@ -87,26 +86,30 @@
         }
 
 
-        // async function fetchAllPosts() {
-        //     const query = `
-        //         {
-        //             getPosts {
-        //                 id
-        //                 username
-        //                 body
-        //             }
-        //         }
-        //     `;
-        //     try {
-        //         const token = localStorage.getItem('token')
-        //         const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
-        //         console.log('Fetched all posts:', data);
-        //         data.data.getPosts.forEach(post => showUserOnScreen(post));
-        //     } catch (error) {
-        //         console.error('Error fetching posts:', error);
-        //     }
-        // }
-        // window.addEventListener('DOMContentLoaded', fetchAllPosts);
+        async function fetchAllPosts() {
+            const query = `
+                {
+                    getPosts {
+                        id
+                        username
+                        body
+                        user
+                    }
+                }
+            `;
+            try {
+                const token = localStorage.getItem('token')
+                const decodedToken = parseJwt(token);
+                const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
+                console.log('Fetched all posts:', data);
+                const allPost=data.data.getPosts.filter(post=>post.user===decodedToken.id)
+                console.log("105--------------<><><>", allPost)
+                allPost.forEach(post => showUserOnScreen(post));
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', fetchAllPosts);
 
         async function fetchAllUsers() {
             const query = `{
@@ -211,14 +214,14 @@
         //     }
 
         async function followAndUnfollowUser1(followerId) {
-    try {
-        console.log('followerId:', followerId);
-        const token = localStorage.getItem('token');
-        const decodedToken = parseJwt(token);
-        console.log('decodeToken in follower', decodedToken)
-        const followingId = decodedToken.id; // Assuming userId is stored in token
-        console.log('followingId:', followingId);
-        const mutation = `
+            try {
+                console.log('followerId:', followerId);
+                const token = localStorage.getItem('token');
+                const decodedToken = parseJwt(token);
+                console.log('decodeToken in follower', decodedToken)
+                const followingId = decodedToken.id; // Assuming userId is stored in token
+                console.log('followingId:', followingId);
+                const mutation = `
             mutation FollowUser($followingId: ID!, $followerId: ID!) {
                 followUser(followingId: $followingId, followerId: $followerId) {
                     id
@@ -230,29 +233,29 @@
         `;
 
 
-console.log("232((((((((((()))))))))))", mutation)
+                console.log("232((((((((((()))))))))))", mutation)
 
-const variables = {
-            followingId: String(followingId),
-            followerId: String(followerId)
-        };
-   console.log("235################------>", variables)
-   const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
-        console.log('data from followAndUnfollowUser', data);
-    } catch (error) {
-        console.error(error);
-    }
-}
+                const variables = {
+                    followingId: String(followingId),
+                    followerId: String(followerId)
+                };
+                console.log("235################------>", variables)
+                const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
+                console.log('data from followAndUnfollowUser', data);
+            } catch (error) {
+                console.error(error);
+            }
+        }
 
-async function followAndUnfollowUser2(followerId) {
-    try {
-        console.log('followerId:', followerId);
-        const token = localStorage.getItem('token');
-        const decodedToken = parseJwt(token);
-        console.log('decodeToken in follower', decodedToken)
-        const followingId = decodedToken.id; // Assuming userId is stored in token
-        console.log('followingId:', followingId);
-        const mutation = `
+        async function followAndUnfollowUser2(followerId) {
+            try {
+                console.log('followerId:', followerId);
+                const token = localStorage.getItem('token');
+                const decodedToken = parseJwt(token);
+                console.log('decodeToken in follower', decodedToken)
+                const followingId = decodedToken.id; // Assuming userId is stored in token
+                console.log('followingId:', followingId);
+                const mutation = `
             mutation UnfollowUser($followingId: ID!, $followerId: ID!) {
                 unfollowUser(followingId: $followingId, followerId: $followerId) {
                     id
@@ -264,23 +267,23 @@ async function followAndUnfollowUser2(followerId) {
         `;
 
 
-console.log("232((((((((((()))))))))))", mutation)
+                console.log("232((((((((((()))))))))))", mutation)
 
-const variables = {
-            followingId: String(followingId),
-            followerId: String(followerId)
-        };
-   console.log("235################------>", variables)
-   const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
-        console.log('data from followAndUnfollowUser', data);
-        
-    } catch (error) {
-        console.error(error);
-    }
-}
+                const variables = {
+                    followingId: String(followingId),
+                    followerId: String(followerId)
+                };
+                console.log("235################------>", variables)
+                const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
+                console.log('data from followAndUnfollowUser', data);
 
-async function fetchFollowedPosts(followerId) {
-                const query = `
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function fetchFollowedPosts(followerId) {
+            const query = `
             query {
                 getPosts {
                     id
@@ -290,56 +293,50 @@ async function fetchFollowedPosts(followerId) {
                 }
             }
         `;
-                try {
-                    const token = localStorage.getItem('token');
-                    const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
-                    console.log('Fetch followed posts:', data);
-                    console.log("311111111111111111",data )
-                    const posts = data.data.getPosts.filter(user => user.user === followerId);
-                   console.log("users h", posts)
-                   posts.forEach(post => showUserOnScreen(post));
-                  } catch (error) {
-                    console.error('Error fetching posts:', error);
-                }
-            }
-
-
-            async function fetchFollowedPosts2(followerId) {
-                const query = `
-            query {
-                getPosts {
-                    id
-                    username
-                    body
-                    user
-                }
-            }
-        `;
-                try {
-                    const token = localStorage.getItem('token');
-                    const data = await request('http://localhost:7000/graphql', query, { followerId: followerId }, { Authorization: `Bearer ${token}` });
-                    console.log('Fetch followed posts:', data);
-                   
+            try {
+                const token = localStorage.getItem('token');
+                const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
+                console.log('Fetch followed posts:', data);
+                console.log("311111111111111111", data)
                 const posts = data.data.getPosts.filter(user => user.user === followerId);
                 console.log("users h", posts)
-                posts.forEach(post=>{
-                    const postElem = document.getElementById(`post-${post.id}`);
-                if(postElem){
-                    postElem.parentNode.removeChild(postElem);
-                }
-                })
-               
-               
-               
-                //    posts.forEach(post => showUserOnScreen(post));
-                  } catch (error) {
-                    console.error('Error fetching posts:', error);
+                posts.forEach(post => showUserOnScreen2(post));
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+            }
+        }
+
+
+        async function fetchFollowedPosts2(followerId) {
+            const query = `
+            query {
+                getPosts {
+                    id
+                    username
+                    body
+                    user
                 }
             }
+        `;
+            try {
+                const token = localStorage.getItem('token');
+                const data = await request('http://localhost:7000/graphql', query, { followerId: followerId }, { Authorization: `Bearer ${token}` });
+                console.log('Fetch followed posts:', data);
 
+                const posts = data.data.getPosts.filter(user => user.user === followerId);
+                console.log("users h", posts)
+                posts.forEach(post => {
+                    const postElem = document.getElementById(`post-${post.id}`);
+                    if (postElem) {
+                        postElem.parentNode.removeChild(postElem);
+                    }
+                })
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+            }
+        }
 
-
-        window.addEventListener('DOMContentLoaded', fetchFollowedPosts2);
+    //   window.addEventListener('DOMContentLoaded', fetchFollowedPosts2);
 
 
         function showUserOnScreen(post) {
@@ -362,8 +359,28 @@ async function fetchFollowedPosts(followerId) {
             parentElem.appendChild(childElem);
         }
 
+        function showUserOnScreen2(post) {
+            const token = localStorage.getItem('token');
+            const decodeToken = parseJwt(token);
+            console.log("145****", decodeToken)
+            const parentElem = document.getElementById('followerPost');
+            const childElem = document.createElement('li');
+            console.log("posts h get ka", post)
+            childElem.textContent = post.username + "---->" + post.body;
+            childElem.id = `post-${post.id}`;
+
+            // const deleteButton = document.createElement('button');
+            // deleteButton.textContent = 'Delete Post';
+            // deleteButton.style.backgroundColor = 'red';
+            // deleteButton.style.color = 'white';
+            // deleteButton.onclick = () => deletePost(post.id);
+
+            // childElem.appendChild(deleteButton);
+            parentElem.appendChild(childElem);
+        }
+
         function showUserOnScreenforFandUF(user) {
-            console.log('300%%%%%%%%%%%%%%%%%%',user)
+            console.log('300%%%%%%%%%%%%%%%%%%', user)
             const token = localStorage.getItem('token');
             const decodeToken = parseJwt(token);
             console.log("145****", decodeToken)
@@ -380,10 +397,8 @@ async function fetchFollowedPosts(followerId) {
             followButton.style.color = 'black';
             followButton.onclick = () => {
                 followAndUnfollowUserforCount("follow")
-                console.log("312&&&&&&&&&&&--->", user)
-                const userId=user.id
-                followAndUnfollowUser1(userId)
-                fetchFollowedPosts(userId)
+                followAndUnfollowUser1(user.id)
+                fetchFollowedPosts(user.id)
                 followButton.disabled = true;
                 followButton.style.backgroundColor = 'green';
                 unfollowButton.disabled = false;
