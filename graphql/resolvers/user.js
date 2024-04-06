@@ -151,6 +151,18 @@ async register(_, { registerInput: { username, email, password } }) {
         console.error("Error fetching users:", error.message);
         throw new Error("Failed to fetch users.");
       }
+    },
+
+    async getFollower(_,{following}){
+      try{
+        console.log('Querying followers for following ID:', following);
+       const follower=await Follow.find({following}).sort({created:-1});
+       console.log('followers of specific user', follower)
+       return follower;
+      }catch(error){
+        console.error("Error fetching users:", error.message)
+        throw new Error("Failed to fetch users")
+      }
     }
   }
 }

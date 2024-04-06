@@ -102,7 +102,7 @@
                 const decodedToken = parseJwt(token);
                 const data = await request('http://localhost:7000/graphql', query, { Authorization: `Bearer ${token}` });
                 console.log('Fetched all posts:', data);
-                const allPost=data.data.getPosts.filter(post=>post.user===decodedToken.id)
+                const allPost = data.data.getPosts.filter(post => post.user === decodedToken.id)
                 console.log("105--------------<><><>", allPost)
                 allPost.forEach(post => showUserOnScreen(post));
             } catch (error) {
@@ -125,7 +125,8 @@
                 const token = localStorage.getItem('token')
                 const decodeToken = parseJwt(token);
                 console.log("128****----------->", decodeToken)
-                const data = await request("http://localhost:7000/graphql", query)
+                const data = await request("http://localhost:7000/graphql", query, { Authorization: `Bearer ${token}` })
+                console.log("data h get Users ka", data)
                 const users = data.data.getUsers.filter(user => user.id !== decodeToken.id);
                 console.log("users h", users)
                 users.forEach(user => showUserOnScreenforFandUF(user));
@@ -136,6 +137,50 @@
         }
 
         window.addEventListener("DOMContentLoaded", fetchAllUsers)
+
+
+        async function fetchAllFollowing() {
+            try {
+
+                const token = localStorage.getItem('token');
+                const decodedToken = parseJwt(token);
+                console.log('decodeToken in follower', decodedToken)
+                const following = decodedToken.id; // Assuming userId is stored in token
+                console.log('followingId:', following);
+
+                const query = `
+        query GetFollower($following: ID!) {
+            getFollower(following: $following) {
+                id
+                follower
+                following
+            }
+        }
+    `;
+
+                const variables = {
+                    following: String(following)
+                };
+               
+                console.log("variablesInFetchFollower", variables)
+                const data = await request('http://localhost:7000/graphql', query, variables, { Authorization: `Bearer ${token}` });
+                console.log("fetchAllFollowingAfterRefresh", data);
+
+                data.data.getFollower.forEach(user => {
+               
+
+                    followAndUnfollowUserforCount("follow"),
+                        fetchFollowedPosts(user.follower)
+
+                });
+              
+            } catch (error) {
+                console.error("error fetching users", error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchAllFollowing);
+
 
         async function deletePost(postId) {
             const mutation = `
@@ -213,6 +258,7 @@
         //         }
         //     }
 
+        let arr=[]
         async function followAndUnfollowUser1(followerId) {
             try {
                 console.log('followerId:', followerId);
@@ -232,16 +278,24 @@
             }
         `;
 
-
                 console.log("232((((((((((()))))))))))", mutation)
-
                 const variables = {
                     followingId: String(followingId),
                     followerId: String(followerId)
                 };
+              
                 console.log("235################------>", variables)
                 const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
                 console.log('data from followAndUnfollowUser', data);
+                
+               
+                let user=data.data.followUser
+                    arr.push(user.id)
+
+                  
+
+              
+                localStorage.setItem("test", JSON.stringify(arr))
             } catch (error) {
                 console.error(error);
             }
@@ -266,9 +320,7 @@
             }
         `;
 
-
                 console.log("232((((((((((()))))))))))", mutation)
-
                 const variables = {
                     followingId: String(followingId),
                     followerId: String(followerId)
@@ -276,7 +328,12 @@
                 console.log("235################------>", variables)
                 const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
                 console.log('data from followAndUnfollowUser', data);
-
+                let user=data.data.unfollowUser
+                
+        
+            arr.splice(user.id, 1); // Remove user ID from followedUsers array
+            localStorage.setItem('test', JSON.stringify(arr));
+        
             } catch (error) {
                 console.error(error);
             }
@@ -336,7 +393,7 @@
             }
         }
 
-    //   window.addEventListener('DOMContentLoaded', fetchFollowedPosts2);
+        //   window.addEventListener('DOMContentLoaded', fetchFollowedPosts2);
 
 
         function showUserOnScreen(post) {
@@ -379,6 +436,79 @@
             parentElem.appendChild(childElem);
         }
 
+
+
+        // function showUserOnScreenforFandUF(user) {
+        //     console.log('300%%%%%%%%%%%%%%%%%%', user)
+        //     const token = localStorage.getItem('token');
+        //     const decodeToken = parseJwt(token);
+        //     console.log("145****", decodeToken)
+        //     const parentElem = document.getElementById('allUsers');
+        //     const childElem = document.createElement('li');
+        //     console.log("posts h get ka", user)
+        //     childElem.textContent = user.username;
+        //     childElem.id = `user-${user.id}`;
+
+        //     const followButton = document.createElement('button');
+        //     followButton.textContent = 'Follow User';
+        //     followButton.style.backgroundColor = 'yellow';
+        //     followButton.style.color = 'black';
+
+        //     const unfollowButton = document.createElement('button');
+        //     unfollowButton.textContent = 'Unfollow User';
+        //     unfollowButton.style.backgroundColor = 'red';
+        //     unfollowButton.style.color = 'black';
+
+        //     let followedUsers = JSON.parse(localStorage.getItem('followedUsers')) || [];
+
+        //     if (followedUsers.includes(user.id)) {
+        //         followButton.disabled = true;
+        //         followButton.style.backgroundColor = 'green';
+        //         unfollowButton.disabled = false;
+        //         // followAndUnfollowUserforCount("follow");
+        //         // fetchFollowedPosts(user.id);
+        //     } else {
+        //         unfollowButton.disabled = true;
+        //         // followAndUnfollowUserforCount("unfollow");
+
+        //         // fetchFollowedPosts2(user.id);
+        //     }
+
+
+        //     followButton.onclick = () => {
+        //         followAndUnfollowUserforCount("follow");
+        //         followAndUnfollowUser1(user.id);
+        //         fetchFollowedPosts(user.id);
+        //         followButton.disabled = true;
+        //         followButton.style.backgroundColor = 'green';
+        //         unfollowButton.disabled = false;
+        //         if (!followedUsers.includes(user.id)) {
+        //             followedUsers.push(user.id); // Only add if not already in the array
+        //         }
+        //         console.log("followedUsers", followedUsers)
+        //         localStorage.setItem('followedUsers', JSON.stringify(followedUsers));
+        //     }
+
+        //     unfollowButton.onclick = () => {
+        //         followAndUnfollowUserforCount("unfollow");
+        //         followAndUnfollowUser2(user.id);
+        //         fetchFollowedPosts2(user.id);
+        //         unfollowButton.disabled = true;
+        //         followButton.disabled = false;
+        //         followButton.style.backgroundColor = 'yellow';
+        //         const index = followedUsers.indexOf(user.id);
+        //         if (index > -1) {
+        //             followedUsers.splice(index, 1);
+        //         }
+        //         localStorage.setItem('followedUsers', JSON.stringify(followedUsers));
+        //     }
+
+        //     childElem.appendChild(followButton);
+        //     childElem.appendChild(unfollowButton);
+        //     parentElem.appendChild(childElem);
+        // }
+
+
         function showUserOnScreenforFandUF(user) {
             console.log('300%%%%%%%%%%%%%%%%%%', user)
             const token = localStorage.getItem('token');
@@ -394,6 +524,9 @@
             followButton.textContent = 'Follow User';
             followButton.style.backgroundColor = 'yellow'
 
+           
+
+
             followButton.style.color = 'black';
             followButton.onclick = () => {
                 followAndUnfollowUserforCount("follow")
@@ -402,8 +535,9 @@
                 followButton.disabled = true;
                 followButton.style.backgroundColor = 'green';
                 unfollowButton.disabled = false;
-
             }
+
+
 
             const unfollowButton = document.createElement('button');
             unfollowButton.textContent = 'Unfollow User';
@@ -418,6 +552,18 @@
                 followButton.style.backgroundColor = 'yellow';
             }
 
+            let followedUsers = JSON.parse(localStorage.getItem('test')) || []
+            // console.log("512+++++++++", followedUsers)
+
+            if (followedUsers.includes(user.id)) {
+                followButton.disabled = true;
+                followButton.style.backgroundColor = 'green';
+                unfollowButton.disabled = false;
+              
+            } else {
+                unfollowButton.disabled = true;
+            }
+
             if (followButton.style.backgroundColor === 'yellow') {
                 unfollowButton.disabled = true;
             }
@@ -426,6 +572,12 @@
             parentElem.appendChild(childElem);
 
         }
+
+
+
+
+
+
     </script>
 </body>
 

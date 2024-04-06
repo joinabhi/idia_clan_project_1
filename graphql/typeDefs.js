@@ -16,8 +16,14 @@ type User {
     password:String!
     username: String!
     createdAt: String!
-    following:[User]
-  }
+   }
+
+type Follow {
+  id:ID!
+  follower:ID!
+  following:ID!
+  createdAt: String!
+}
 
 input RegisterInput {
     username: String!
@@ -25,13 +31,12 @@ input RegisterInput {
     email: String!
   }
 
-
-
 type Query{
     getUsers:[User]
     getPosts:[Post]
     getPost(postId: ID!): Post
     getFollowedPosts:[Post]
+    getFollower(following:ID!):[Follow]
 }
 
 type Mutation{
