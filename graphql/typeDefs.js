@@ -25,6 +25,13 @@ type Follow {
   createdAt: String!
 }
 
+type Like{
+  id:ID!
+  follower:ID!
+  following:ID!
+  createdAt: String!
+}
+
 input RegisterInput {
     username: String!
     password: String!
@@ -37,6 +44,7 @@ type Query{
     getPost(postId: ID!): Post
     getFollowedPosts:[Post]
     getFollower(following:ID!):[Follow]
+    getLike(following:ID!):[Like]
 }
 
 type Mutation{
@@ -46,6 +54,8 @@ type Mutation{
     deletePost(postId: ID!): String!
     followUser(followingId:ID!, followerId:ID!):User!
     unfollowUser(followingId:ID!, followerId:ID!):User!
+    likeUser(followingId:ID!, followerId:ID!):User!
+    unlikeUser(followingId:ID!, followerId:ID!):User!
 }
 `;
 

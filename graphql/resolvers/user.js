@@ -1,5 +1,6 @@
 const User = require('../../models/user')
 const Follow = require('../../models/follow')
+const Like = require('../../models/like')
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const checkAuth = require('../../util/check-auth');
@@ -25,7 +26,7 @@ function generateToken(user) {
 
 module.exports = {
   Mutation: {
-  async login(_, { email, password }) {
+    async login(_, { email, password }) {
       const { errors, valid } = validateLoginInput(email, password);
 
       if (!valid) {
@@ -56,7 +57,7 @@ module.exports = {
       };
     },
 
-async register(_, { registerInput: { username, email, password } }) {
+    async register(_, { registerInput: { username, email, password } }) {
       // TODO: Validate user data
       const { valid, errors } = validateRegisterInput(username, email, password);
       if (!valid) {
@@ -138,31 +139,88 @@ async register(_, { registerInput: { username, email, password } }) {
       } catch (error) {
         throw error;
       }
+    },
+  
+
+
+  async likeUser(_, { followingId, followerId }) {
+    console.log("followingId, followerId", followingId, followerId)
+    try {
+      // Check if the user is already being followed
+      const existingLike = await Like.findOne({ follower: followerId, following: followingId });
+      console.log('117&&&&&&&&&&&&&&&&&&&&----->existinglikeUser', existingLike)
+      if (existingLike) {
+        throw new Error('User is already being liked');
+      }
+
+      const like = new Like({
+        follower: followerId,
+        following: followingId
+      });
+      console.log('126----,.,.,.like', like)
+      await like.save();
+
+      return await User.findById(followerId);
+    } catch (error) {
+      throw error;
     }
   },
 
-  Query: {
-    async getUsers() {
-      try {
-        const users = await User.find().sort({ created: -1 });
-        console.log("Users in getUsers:", users);
-        return users;
-      } catch (error) {
-        console.error("Error fetching users:", error.message);
-        throw new Error("Failed to fetch users.");
+  async unlikeUser(_, { followingId, followerId }) {
+    try {
+      // Check if the user is being followed
+      const existingLike = await Like.findOne({ follower: followerId, following: followingId });
+      if (!existingLike) {
+        throw new Error('User is not being followed');
       }
-    },
 
-    async getFollower(_,{following}){
-      try{
-        console.log('Querying followers for following ID:', following);
-       const follower=await Follow.find({following}).sort({created:-1});
-       console.log('followers of specific user', follower)
-       return follower;
-      }catch(error){
-        console.error("Error fetching users:", error.message)
-        throw new Error("Failed to fetch users")
-      }
+      await Like.findByIdAndDelete(existingLike._id);
+      return await User.findById(followerId);
+    } catch (error) {
+      throw error;
     }
   }
+
+
+},
+
+
+
+Query: {
+    async getUsers() {
+    try {
+      const users = await User.find().sort({ created: -1 });
+      console.log("Users in getUsers:", users);
+      return users;
+    } catch (error) {
+      console.error("Error fetching users:", error.message);
+      throw new Error("Failed to fetch users.");
+    }
+  },
+
+    async getFollower(_, { following }){
+    try {
+      console.log('Querying followers for following ID:', following);
+      const follower = await Follow.find({ following }).sort({ created: -1 });
+      console.log('followers of specific user', follower)
+      return follower;
+    } catch (error) {
+      console.error("Error fetching users:", error.message)
+      throw new Error("Failed to fetch users")
+    }
+  },
+
+  async getLike(_, { following }){
+    try {
+      console.log('Querying followers for following ID:', following);
+      const follower = await Like.find({ following }).sort({ created: -1 });
+      console.log('followers of specific user', follower)
+      return follower;
+    } catch (error) {
+      console.error("Error fetching users:", error.message)
+      throw new Error("Failed to fetch users")
+    }
+  }
+
+}
 }

@@ -36,6 +36,7 @@
     <h1>All Users</h1>
     <ul id="allUsers"></ul>
     <div id="counter">Following: 0</div>
+    <div id="likes">likes:- 0</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/graphql-request/3.5.0/graphql-request.min.js"></script>
     <script>
 
@@ -182,6 +183,50 @@
         window.addEventListener('DOMContentLoaded', fetchAllFollowing);
 
 
+        async function fetchAllLike() {
+            try {
+
+                const token = localStorage.getItem('token');
+                const decodedToken = parseJwt(token);
+                console.log('decodeToken in follower', decodedToken)
+                const following = decodedToken.id; // Assuming userId is stored in token
+                console.log('followingId:', following);
+
+                const query = `
+        query GetLike($following: ID!) {
+            getLike(following: $following) {
+                id
+                follower
+                following
+            }
+        }
+    `;
+
+                const variables = {
+                    following: String(following)
+                };
+               
+                console.log("variablesInFetchFollower", variables)
+                const data = await request('http://localhost:7000/graphql', query, variables, { Authorization: `Bearer ${token}` });
+                console.log("fetchAllFollowingAfterRefresh", data);
+
+                data.data.getLike.forEach(user => {
+               
+
+                    likesAndUnlikes('like')
+
+                });
+              
+            } catch (error) {
+                console.error("error fetching users", error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchAllLike);
+
+
+
+
         async function deletePost(postId) {
             const mutation = `
         mutation DeletePost($postId: ID!) {
@@ -223,7 +268,20 @@
                     counter--;
                 }
             }
-            document.getElementById('counter').innerText = "Following: " + counter;
+            document.getElementById('counter').innerText = "Following:- " + counter;
+        }
+
+
+        let count=0
+        function likesAndUnlikes(action){
+            if(action==='like'){
+                count++
+            }else if(action==='unlike'){
+                if(count>0){
+                    count--;
+                }
+            }
+            document.getElementById('likes').innerHTML='likes:- ' + count;
         }
 
 
@@ -295,7 +353,48 @@
                   
 
               
-                localStorage.setItem("test", JSON.stringify(arr))
+                localStorage.setItem("follow", JSON.stringify(arr))
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+
+        let arr2=[]
+        async function likesAndUnlikeUser1(followerId) {
+            try {
+                console.log('followerId:', followerId);
+                const token = localStorage.getItem('token');
+                const decodedToken = parseJwt(token);
+                console.log('decodeToken in follower', decodedToken)
+                const followingId = decodedToken.id; // Assuming userId is stored in token
+                console.log('followingId:', followingId);
+                const mutation = `
+            mutation LikeUser($followingId: ID!, $followerId: ID!) {
+                likeUser(followingId: $followingId, followerId: $followerId) {
+                    id
+                    email
+                    username
+                    createdAt
+                }
+            }
+        `;
+
+                console.log("232((((((((((()))))))))))", mutation)
+                const variables = {
+                    followingId: String(followingId),
+                    followerId: String(followerId)
+                };
+              
+                console.log("235################------>", variables)
+                const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
+                console.log('data from followAndUnfollowUser', data);
+                
+               
+                let user=data.data.likeUser
+                    arr2.push(user.id)
+
+            localStorage.setItem("like", JSON.stringify(arr2))
             } catch (error) {
                 console.error(error);
             }
@@ -332,12 +431,57 @@
                 
         
             arr.splice(user.id, 1); // Remove user ID from followedUsers array
-            localStorage.setItem('test', JSON.stringify(arr));
+            localStorage.setItem('follow', JSON.stringify(arr));
         
             } catch (error) {
                 console.error(error);
             }
         }
+
+        async function likesAndUnlikeUser2(followerId) {
+            try {
+                console.log('followerId:', followerId);
+                const token = localStorage.getItem('token');
+                const decodedToken = parseJwt(token);
+                console.log('decodeToken in follower', decodedToken)
+                const followingId = decodedToken.id; // Assuming userId is stored in token
+                console.log('followingId:', followingId);
+                const mutation = `
+            mutation UnlikeUser($followingId: ID!, $followerId: ID!) {
+                unlikeUser(followingId: $followingId, followerId: $followerId) {
+                    id
+                    email
+                    username
+                    createdAt
+                }
+            }
+        `;
+
+                console.log("232((((((((((()))))))))))", mutation)
+                const variables = {
+                    followingId: String(followingId),
+                    followerId: String(followerId)
+                };
+                console.log("235################------>", variables)
+                const data = await request('http://localhost:7000/graphql', mutation, variables, { Authorization: `Bearer ${token}` });
+                console.log('data from followAndUnfollowUser', data);
+                let user=data.data.unlikeUser
+                
+        
+            arr2.splice(user.id, 1); // Remove user ID from followedUsers array
+            localStorage.setItem('like', JSON.stringify(arr2));
+        
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+
+
+
+
+
+
 
         async function fetchFollowedPosts(followerId) {
             const query = `
@@ -525,8 +669,7 @@
             followButton.style.backgroundColor = 'yellow'
 
            
-
-
+            
             followButton.style.color = 'black';
             followButton.onclick = () => {
                 followAndUnfollowUserforCount("follow")
@@ -552,7 +695,34 @@
                 followButton.style.backgroundColor = 'yellow';
             }
 
-            let followedUsers = JSON.parse(localStorage.getItem('test')) || []
+            const likeButton = document.createElement('button');
+            likeButton.textContent = 'Like User';
+            likeButton.style.backgroundColor = 'yellow';
+            likeButton.style.color = 'black';
+            likeButton.onclick = () => {
+                likesAndUnlikes('like')
+                likesAndUnlikeUser1(user.id)
+                likeButton.disabled = true;
+                likeButton.style.backgroundColor = 'green';
+                unlikeButton.disabled = false;
+            }
+
+            const unlikeButton = document.createElement('button');
+            unlikeButton.textContent = 'Unlike User';
+            unlikeButton.style.backgroundColor = 'red';
+            unlikeButton.style.color = 'black';
+            unlikeButton.onclick = () => {
+                likesAndUnlikes('unlike')
+                likesAndUnlikeUser2(user.id)
+                unlikeButton.disabled = true;
+                likeButton.disabled = false;
+                likeButton.style.backgroundColor = 'yellow';
+            }
+
+
+
+
+            let followedUsers = JSON.parse(localStorage.getItem('follow')) || []
             // console.log("512+++++++++", followedUsers)
 
             if (followedUsers.includes(user.id)) {
@@ -567,8 +737,29 @@
             if (followButton.style.backgroundColor === 'yellow') {
                 unfollowButton.disabled = true;
             }
+
+
+
+            
+            let likedUsers = JSON.parse(localStorage.getItem('like')) || []
+            // console.log("512+++++++++", followedUsers)
+
+            if (likedUsers.includes(user.id)) {
+                likeButton.disabled = true;
+                likeButton.style.backgroundColor = 'green';
+                unlikeButton.disabled = false;
+              
+            } else {
+                unlikeButton.disabled = true;
+            }
+
+            if (likeButton.style.backgroundColor === 'yellow') {
+                unlikeButton.disabled = true;
+            }
             childElem.appendChild(followButton);
             childElem.appendChild(unfollowButton);
+            childElem.appendChild(likeButton);
+            childElem.appendChild(unlikeButton);
             parentElem.appendChild(childElem);
 
         }
